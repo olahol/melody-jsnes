@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>melody-jsnes</title>
+  <style>
+    canvas {
+      zoom: 300%;
+      -moz-transform: scale(3);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+    }
+
+    #content {
+      margin: 0 auto;
+      width: 768px;
+    }
+
+    #message {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 30px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="content">
+  <h1 id="message">Waiting for Player 2</h1>
+  <div id="emulator"></div>
+</div>
+
+<script src="jsnes/lib/jquery-1.4.2.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="jsnes/lib/dynamicaudio-min.js" type="text/javascript" charset="utf-8"></script>
+<script src="jsnes/source/nes.js" type="text/javascript" charset="utf-8"></script>
+<script src="jsnes/source/utils.js" type="text/javascript" charset="utf-8"></script>
+<script src="jsnes/source/cpu.js" type="text/javascript" charset="utf-8"></script>
+<script src="jsnes/source/keyboard.js" type="text/javascript" charset="utf-8"></script>
+<script src="jsnes/source/mappers.js" type="text/javascript" charset="utf-8"></script>
+<script src="jsnes/source/papu.js" type="text/javascript" charset="utf-8"></script>
+<script src="jsnes/source/ppu.js" type="text/javascript" charset="utf-8"></script>
+<script src="jsnes/source/rom.js" type="text/javascript" charset="utf-8"></script>
+<script src="jsnes/source/ui.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript" charset="utf-8">
+$(function () {
+
+var url = "ws://" + window.location.host + "/ws";
+var ws = new WebSocket(url);
+
+var screen = $("<canvas width='256' height='240'>");
+var context = screen[0].getContext('2d');
+var imageData = context.getImageData(0, 0, 256, 240);
+$("#emulator").append(screen);
+
+var nes = null;
+var player = 0;
+var frame = 0;
+
+function clearScreen() {
+  context.fillStyle = "black";
+  context.fillRect(0, 0, 256, 240);
+  for (var i = 3; i < imageData.data.length-3; i += 4) {
+    imageData.data[i] = 0xFF;
+  }
+}
+
+function createNes() {
+  frame = 0;
+  nes = new JSNES({});
+  nes.ui.writeFrame = function (buffer, prevBuffer) {
+    var data = imageData.data;
+    var pixel, i, j;
+    for (i=0; i<256*240; i++) {
+        pixel = buffer[i];
+        if (pixel != prevBuffer[i]) {
+            j = i*4;
+            data[j] = pixel & 0xFF;
+            data[j+1] = (pixel >> 8) & 0xFF;
+            data[j+2] = (pixel >> 16) & 0xFF;
+            prevBuffer[i] = pixel;
+        }
+    }
+    frame += 1;
+    context.putImageData(imageData, 0, 0);
+    // send at 30 fps
+    if (frame === 2) {
+      sendScreen();
+      frame = 0;
+    }
+  };
+}
+
+function loadROM(url) {
+  $.ajax({
+    url: escape(url),
+    xhr: function() {
+      var xhr = $.ajaxSettings.xhr();
+      xhr.overrideMimeType('text/plain; charset=x-user-defined');
+      return xhr;
+    },
+    complete: function(xhr, status) {
+      nes.loadRom(xhr.responseText);
+      nes.start();
+    }
+  });
+}
+
+function triggerKey(type, keyCode) {
+  var e = jQuery.Event(type);
+  e.which = keyCode;
+  e.keyCode = keyCode;
+  $(document).trigger(e);
+}
+
+function sendKey(type, keyCode) {
+  ws.send(type + " " + keyCode);
+}
+
+function sendScreen(buffer) {
+  var image = screen[0].toDataURL();
+  ws.send("data " + image);
+}
+
+function drawData(data) {
+  var img = new Image();
+  img.src = data;
+  context.drawImage(img, 0, 0);
+}
+
+function startPlaying(data) {
+  player = parseInt(data, 10);
+
+  if (player == 1) {
+    clearScreen();
+    createNes();
+    loadROM("/game.nes");
+    $("#message").text("You are Player 1");
+  }
+
+  if (player == 2) {
+    $("#message").text("You are Player 2");
+  }
+}
+
+function stopPlaying() {
+  if (nes !== null) {
+    nes.stop();
+    nes = null;
+  }
+  clearScreen();
+  player = 0;
+  $("#message").text("Waiting for Player 2");
+}
+
+ws.onmessage = function (msg) {
+  var parts = msg.data.split(" ");
+  var cmd = parts[0];
+  var data = parts[1];
+
+  if (cmd === "join") {
+    startPlaying(data);
+  }
+
+  if (cmd === "part") {
+    stopPlaying();
+  }
+
+  if (cmd === "keyup" || cmd === "keydown") {
+    triggerKey(cmd, parseInt(data, 10));
+  }
+
+  if (cmd === "data") {
+    drawData(data);
+  }
+};
+
+var keyMap = {
+  88: 103,
+  90: 105,
+  17: 99,
+  13: 97,
+  38: 104,
+  40: 98,
+  37: 100,
+  39: 102
+};
+
+$(document).bind("keydown", function(evt) {
+  var code = evt.keyCode;
+  if (player == 1) { nes.keyboard.keyDown(evt); }
+  if (player == 2 && keyMap[code]) { evt.preventDefault(); sendKey("keydown", keyMap[code]); }
+});
+
+$(document).bind("keyup", function(evt) {
+  var code = evt.keyCode;
+  if (player == 1) { nes.keyboard.keyUp(evt); }
+  if (player == 2 && keyMap[code]) { evt.preventDefault(); sendKey("keyup", keyMap[code]); }
+});
+
+clearScreen();
+
+});
+</script>
+</body>
+</html>
