@@ -57,7 +57,9 @@ func main() {
 
 	m.HandleMessage(func(s *melody.Session, msg []byte) {
 		partner := pairs[s]
-		partner.Write(msg)
+		if partner != nil {
+			partner.Write(msg)
+		}
 	})
 
 	m.HandleDisconnect(func(s *melody.Session) {
