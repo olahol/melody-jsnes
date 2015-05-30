@@ -31,6 +31,10 @@
       font-family: sans-serif;
       padding-bottom: 15px;
     }
+
+		#games-list {
+			padding-bottom: 15px;
+		}
   </style>
 </head>
 
@@ -38,7 +42,12 @@
 
 <div id="content">
   <h1 id="message">Waiting for Player 2</h1>
-  <p id="keys">Arrow keys = joypad, X = a, Z = b, Enter = start, Ctrl = select</p>
+	<p id="games-list">
+		<select id="current-game" onchange="newGame()">
+			<option value="" disabled="disabled" selected="selected">Please select a game</option>
+		</select>
+	</p>
+	<p id="keys">Arrow keys = joypad, X = a, Z = b, Enter = start, Ctrl = select</p>
   <div id="emulator"></div>
 </div>
 
@@ -65,7 +74,7 @@ var imageData = context.getImageData(0, 0, 256, 240);
 $("#emulator").append(screen);
 
 var nes = null;
-var player = 0;
+this.player = 0;
 var frame = 0;
 
 function clearScreen() {
@@ -100,6 +109,17 @@ function createNes() {
       frame = 0;
     }
   };
+}
+
+function loadGames() {
+	$.getJSON('/gamelist', function(data){
+		var html = '';
+		var len = data.games.length;
+		for (var i = 0; i< len; i++) {
+			html += '<option value="' + data.games[i] + '">' + data.games[i].replace(".nes","") + '</option>';
+		}
+		$('#current-game').append(html);
+	});
 }
 
 function loadROM(url) {
@@ -140,18 +160,29 @@ function drawData(data) {
 }
 
 function startPlaying(data) {
-  player = parseInt(data, 10);
-
-  if (player == 1) {
-    clearScreen();
-    createNes();
-    loadROM("/games?name=Contra Force.nes");
-    $("#message").text("You are Player 1");
+	window.player = parseInt(data, 10);
+	
+  if (window.player == 1) {
+    newGame();
+		$("#games-list").show();
+		$("#message").text("You are Player 1");
   }
-  if (player == 2) {
+  if (window.player == 2) {
+		$("#games-list").hide();
     $("#message").text("You are Player 2");
   }
 }
+
+function newGame() {
+  var rom = document.getElementById("current-game").value;
+ 
+	if(window.player == 1 && rom != "") {
+		clearScreen();
+  	createNes();
+  	loadROM("/games?name=" + rom);
+	}
+}
+window.newGame = newGame;
 
 function stopPlaying() {
   if (nes !== null) {
@@ -159,7 +190,7 @@ function stopPlaying() {
     nes = null;
   }
   clearScreen();
-  player = 0;
+  window.player = 0;
   $("#message").text("Waiting for Player 2");
 }
 
@@ -198,17 +229,18 @@ var keyMap = {
 
 $(document).bind("keydown", function(evt) {
   var code = evt.keyCode;
-  if (player == 1) { nes.keyboard.keyDown(evt); }
-  if (player == 2 && keyMap[code]) { evt.preventDefault(); sendKey("keydown", keyMap[code]); }
+  if (window.player == 1) { nes.keyboard.keyDown(evt); }
+  if (window.player == 2 && keyMap[code]) { evt.preventDefault(); sendKey("keydown", keyMap[code]); }
 });
 
 $(document).bind("keyup", function(evt) {
   var code = evt.keyCode;
-  if (player == 1) { nes.keyboard.keyUp(evt); }
-  if (player == 2 && keyMap[code]) { evt.preventDefault(); sendKey("keyup", keyMap[code]); }
+  if (window.player == 1) { nes.keyboard.keyUp(evt); }
+  if (window.player == 2 && keyMap[code]) { evt.preventDefault(); sendKey("keyup", keyMap[code]); }
 });
 
 clearScreen();
+loadGames();
 
 });
 </script>
