@@ -145,10 +145,9 @@ function startPlaying(data) {
   if (player == 1) {
     clearScreen();
     createNes();
-    loadROM("/game.nes");
+    loadROM("/games?name=Contra Force.nes");
     $("#message").text("You are Player 1");
   }
-
   if (player == 2) {
     $("#message").text("You are Player 2");
   }

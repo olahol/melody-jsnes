@@ -26,8 +26,9 @@ func main() {
 		http.ServeFile(c.Writer, c.Request, "index.html")
 	})
 
-	r.GET("/game.nes", func(c *gin.Context) {
-		http.ServeFile(c.Writer, c.Request, "game.nes")
+	r.GET("/games?name=:name", func(c *gin.Context) {
+		name := c.Params.ByName("name")
+		http.ServeFile(c.Writer, c.Request, name)
 	})
 
 	r.GET("/ws", func(c *gin.Context) {
