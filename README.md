@@ -11,10 +11,15 @@ from player two. Images data goes in direction, key codes in the other.
 
 ## Usage
 
-You will need to have your own ROM named `game.nes` in the server directory.
+You will need to have at least one NES ROM with the extension `.nes`.
 
     $ git clone --recursive https://github.com/olahol/melody-jsnes
     $ go get
     $ go build
     $ ./melody-jsnes
     $ $BROWSER http://localhost:5000
+
+## Contributors
+
+* Ola Holmström (@olahol)
+* Chris Cacciatore (@cacciatc)

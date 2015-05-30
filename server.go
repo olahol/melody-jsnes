@@ -4,8 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/olahol/melody"
-	"path/filepath"
 	"net/http"
+	"path/filepath"
 	"sync"
 )
 
@@ -29,9 +29,9 @@ func main() {
 
 	r.GET("/gamelist", func(c *gin.Context) {
 		files, _ := filepath.Glob("*.nes")
-		c.JSON(200, gin.H{"games":files})
+		c.JSON(200, gin.H{"games": files})
 	})
-	
+
 	r.GET("/games?name=:name", func(c *gin.Context) {
 		name := c.Params.ByName("name")
 		http.ServeFile(c.Writer, c.Request, name)
