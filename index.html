@@ -5,8 +5,11 @@
   <title>melody-jsnes</title>
   <style>
     canvas {
-      zoom: 300%;
-      -moz-transform: scale(3);
+      width: 768px;
+      height: 720px;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-crisp-edges;
+      image-rendering: pixelated;
     }
 
     * {
@@ -156,12 +159,15 @@ function sendScreen(buffer) {
 function drawData(data) {
   var img = new Image();
   img.src = data;
-  context.drawImage(img, 0, 0);
+  img.onload = function () {
+    context.clearRect(0, 0, screen.width, screen.height);
+    context.drawImage(img, 0, 0);
+  };
 }
 
 function startPlaying(data) {
 	window.player = parseInt(data, 10);
-	
+
   if (window.player == 1) {
     newGame();
 		$("#games-list").show();
@@ -175,7 +181,7 @@ function startPlaying(data) {
 
 function newGame() {
   var rom = document.getElementById("current-game").value;
- 
+
 	if(window.player == 1 && rom != "") {
 		clearScreen();
   	createNes();
