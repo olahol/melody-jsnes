@@ -34,10 +34,6 @@
       font-family: sans-serif;
       padding-bottom: 15px;
     }
-
-		#games-list {
-			padding-bottom: 15px;
-		}
   </style>
 </head>
 
@@ -45,11 +41,6 @@
 
 <div id="content">
   <h1 id="message">Waiting for Player 2</h1>
-	<p id="games-list">
-		<select id="current-game" onchange="newGame()">
-			<option value="" disabled="disabled" selected="selected">Please select a game</option>
-		</select>
-	</p>
 	<p id="keys">Arrow keys = joypad, X = a, Z = b, Enter = start, Ctrl = select</p>
   <div id="emulator"></div>
 </div>
@@ -114,17 +105,6 @@ function createNes() {
   };
 }
 
-function loadGames() {
-	$.getJSON('/gamelist', function(data){
-		var html = '';
-		var len = data.games.length;
-		for (var i = 0; i< len; i++) {
-			html += '<option value="' + data.games[i] + '">' + data.games[i].replace(".nes","") + '</option>';
-		}
-		$('#current-game').append(html);
-	});
-}
-
 function loadROM(url) {
   $.ajax({
     url: escape(url),
@@ -170,22 +150,18 @@ function startPlaying(data) {
 
   if (window.player == 1) {
     newGame();
-		$("#games-list").show();
 		$("#message").text("You are Player 1");
   }
   if (window.player == 2) {
-		$("#games-list").hide();
     $("#message").text("You are Player 2");
   }
 }
 
 function newGame() {
-  var rom = document.getElementById("current-game").value;
-
-	if(window.player == 1 && rom != "") {
+	if(window.player == 1) {
 		clearScreen();
   	createNes();
-  	loadROM("/games?name=" + rom);
+  	loadROM("/rom");
 	}
 }
 window.newGame = newGame;
@@ -246,7 +222,6 @@ $(document).bind("keyup", function(evt) {
 });
 
 clearScreen();
-loadGames();
 
 });
 </script>

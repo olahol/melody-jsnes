@@ -1,15 +1,25 @@
 package main
 
 import (
+	"flag"
+	"log"
+	"net/http"
+	"sync"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/olahol/melody"
-	"net/http"
-	"path/filepath"
-	"sync"
 )
 
 func main() {
+	flag.Parse()
+
+	f := flag.Arg(0)
+
+	if f == "" {
+		log.Fatalln("no rom file")
+	}
+
 	r := gin.New()
 	m := melody.New()
 
@@ -27,14 +37,8 @@ func main() {
 		http.ServeFile(c.Writer, c.Request, "index.html")
 	})
 
-	r.GET("/gamelist", func(c *gin.Context) {
-		files, _ := filepath.Glob("*.nes")
-		c.JSON(200, gin.H{"games": files})
-	})
-
-	r.GET("/games?name=:name", func(c *gin.Context) {
-		name := c.Params.ByName("name")
-		http.ServeFile(c.Writer, c.Request, name)
+	r.GET("/rom", func(c *gin.Context) {
+		http.ServeFile(c.Writer, c.Request, f)
 	})
 
 	r.GET("/ws", func(c *gin.Context) {
