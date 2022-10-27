@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/olahol/melody"
 )
@@ -20,7 +19,6 @@ func main() {
 		log.Fatalln("no rom file")
 	}
 
-	r := gin.New()
 	m := melody.New()
 
 	size := 65536
@@ -31,18 +29,24 @@ func main() {
 	m.Config.MaxMessageSize = int64(size)
 	m.Config.MessageBufferSize = 2048
 
-	r.Static("/jsnes", "./jsnes")
+	fs := http.FileServer(http.Dir("./jsnes"))
+	http.Handle("/jsnes/", http.StripPrefix("/jsnes/", fs))
 
-	r.GET("/", func(c *gin.Context) {
-		http.ServeFile(c.Writer, c.Request, "index.html")
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+
+		http.ServeFile(w, r, "index.html")
 	})
 
-	r.GET("/rom", func(c *gin.Context) {
-		http.ServeFile(c.Writer, c.Request, f)
+	http.HandleFunc("/rom", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, f)
 	})
 
-	r.GET("/ws", func(c *gin.Context) {
-		m.HandleRequest(c.Writer, c.Request)
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		m.HandleRequest(w, r)
 	})
 
 	var mutex sync.Mutex
@@ -84,5 +88,5 @@ func main() {
 		mutex.Unlock()
 	})
 
-	r.Run(":5000")
+	http.ListenAndServe(":5000", nil)
 }
