@@ -69,7 +69,6 @@ $("#emulator").append(screen);
 
 var nes = null;
 this.player = 0;
-var frame = 0;
 
 function clearScreen() {
   context.fillStyle = "black";
@@ -80,7 +79,6 @@ function clearScreen() {
 }
 
 function createNes() {
-  frame = 0;
   nes = new JSNES({});
   nes.ui.writeFrame = function (buffer, prevBuffer) {
     var data = imageData.data;
@@ -95,13 +93,8 @@ function createNes() {
             prevBuffer[i] = pixel;
         }
     }
-    frame += 1;
     context.putImageData(imageData, 0, 0);
-    // send at 30 fps
-    if (frame === 2) {
-      sendScreen();
-      frame = 0;
-    }
+    sendScreen();
   };
 }
 
@@ -132,8 +125,9 @@ function sendKey(type, keyCode) {
 }
 
 function sendScreen(buffer) {
-  var image = screen[0].toDataURL();
-  ws.send("data " + image);
+  screen[0].toBlob(function (blob) {
+    ws.send(blob);
+  });
 }
 
 function drawData(data) {
@@ -177,24 +171,24 @@ function stopPlaying() {
 }
 
 ws.onmessage = function (msg) {
-  var parts = msg.data.split(" ");
-  var cmd = parts[0];
-  var data = parts[1];
+  if (msg.data instanceof Blob) {
+    drawData(URL.createObjectURL(msg.data));
+  } else {
+    var parts = msg.data.split(" ");
+    var cmd = parts[0];
+    var data = parts[1];
 
-  if (cmd === "join") {
-    startPlaying(data);
-  }
+    if (cmd === "join") {
+      startPlaying(data);
+    }
 
-  if (cmd === "part") {
-    stopPlaying();
-  }
+    if (cmd === "part") {
+      stopPlaying();
+    }
 
-  if (cmd === "keyup" || cmd === "keydown") {
-    triggerKey(cmd, parseInt(data, 10));
-  }
-
-  if (cmd === "data") {
-    drawData(data);
+    if (cmd === "keyup" || cmd === "keydown") {
+      triggerKey(cmd, parseInt(data, 10));
+    }
   }
 };
 

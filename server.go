@@ -77,6 +77,13 @@ func main() {
 		}
 	})
 
+	m.HandleMessageBinary(func(s *melody.Session, msg []byte) {
+		partner := pairs[s]
+		if partner != nil {
+			partner.WriteBinary(msg)
+		}
+	})
+
 	m.HandleDisconnect(func(s *melody.Session) {
 		mutex.Lock()
 		partner := pairs[s]
