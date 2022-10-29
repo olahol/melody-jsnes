@@ -68,7 +68,7 @@ var imageData = context.getImageData(0, 0, 256, 240);
 $("#emulator").append(screen);
 
 var nes = null;
-this.player = 0;
+var player = 0;
 
 function clearScreen() {
   context.fillStyle = "black";
@@ -140,25 +140,24 @@ function drawData(data) {
 }
 
 function startPlaying(data) {
-	window.player = parseInt(data, 10);
+	player = parseInt(data, 10);
 
-  if (window.player == 1) {
+  if (player == 1) {
     newGame();
 		$("#message").text("You are Player 1");
   }
-  if (window.player == 2) {
+  if (player == 2) {
     $("#message").text("You are Player 2");
   }
 }
 
 function newGame() {
-	if(window.player == 1) {
+	if(player == 1) {
 		clearScreen();
   	createNes();
   	loadROM("/rom");
 	}
 }
-window.newGame = newGame;
 
 function stopPlaying() {
   if (nes !== null) {
@@ -166,7 +165,7 @@ function stopPlaying() {
     nes = null;
   }
   clearScreen();
-  window.player = 0;
+  player = 0;
   $("#message").text("Waiting for Player 2");
 }
 
@@ -205,14 +204,14 @@ var keyMap = {
 
 $(document).bind("keydown", function(evt) {
   var code = evt.keyCode;
-  if (window.player == 1) { nes.keyboard.keyDown(evt); }
-  if (window.player == 2 && keyMap[code]) { evt.preventDefault(); sendKey("keydown", keyMap[code]); }
+  if (player == 1) { nes.keyboard.keyDown(evt); }
+  if (player == 2 && keyMap[code]) { evt.preventDefault(); sendKey("keydown", keyMap[code]); }
 });
 
 $(document).bind("keyup", function(evt) {
   var code = evt.keyCode;
-  if (window.player == 1) { nes.keyboard.keyUp(evt); }
-  if (window.player == 2 && keyMap[code]) { evt.preventDefault(); sendKey("keyup", keyMap[code]); }
+  if (player == 1) { nes.keyboard.keyUp(evt); }
+  if (player == 2 && keyMap[code]) { evt.preventDefault(); sendKey("keyup", keyMap[code]); }
 });
 
 clearScreen();
