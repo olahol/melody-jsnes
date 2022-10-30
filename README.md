@@ -16,7 +16,7 @@ You will need to have at least one NES ROM with the extension `.nes`.
     $ git clone --recursive https://github.com/olahol/melody-jsnes
     $ go get
     $ go build
-    $ ./melody-jsnes
+    $ ./melody-jsnes game.nes
     $ $BROWSER http://localhost:5000
 
 ## Contributors
