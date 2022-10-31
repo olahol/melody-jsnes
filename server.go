@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"flag"
 	"log"
 	"net/http"
@@ -8,6 +9,14 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/olahol/melody"
+)
+
+var (
+	//go:embed jsnes
+	jsnesDir embed.FS
+
+	//go:embed index.html
+	indexHTML []byte
 )
 
 func main() {
@@ -29,8 +38,7 @@ func main() {
 	m.Config.MaxMessageSize = int64(size)
 	m.Config.MessageBufferSize = 2048
 
-	fs := http.FileServer(http.Dir("./jsnes"))
-	http.Handle("/jsnes/", http.StripPrefix("/jsnes/", fs))
+	http.Handle("/jsnes/", http.FileServer(http.FS(jsnesDir)))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
@@ -38,7 +46,7 @@ func main() {
 			return
 		}
 
-		http.ServeFile(w, r, "index.html")
+		w.Write(indexHTML)
 	})
 
 	http.HandleFunc("/rom", func(w http.ResponseWriter, r *http.Request) {
