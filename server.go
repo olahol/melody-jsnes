@@ -78,13 +78,6 @@ func main() {
 		mutex.Unlock()
 	})
 
-	m.HandleMessage(func(s *melody.Session, msg []byte) {
-		partner := pairs[s]
-		if partner != nil {
-			partner.Write(msg)
-		}
-	})
-
 	m.HandleMessageBinary(func(s *melody.Session, msg []byte) {
 		partner := pairs[s]
 		if partner != nil {
