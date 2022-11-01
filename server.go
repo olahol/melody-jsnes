@@ -12,8 +12,11 @@ import (
 )
 
 var (
-	//go:embed jsnes
-	jsnesDir embed.FS
+	//go:embed jsnes/source/*.js
+	jsnesSourceDir embed.FS
+
+	//go:embed jsnes/lib/*.js
+	jsnesLibDir embed.FS
 
 	//go:embed index.html
 	indexHTML []byte
@@ -38,7 +41,8 @@ func main() {
 	m.Config.MaxMessageSize = int64(size)
 	m.Config.MessageBufferSize = 2048
 
-	http.Handle("/jsnes/", http.FileServer(http.FS(jsnesDir)))
+	http.Handle("/jsnes/source/", http.FileServer(http.FS(jsnesSourceDir)))
+	http.Handle("/jsnes/lib/", http.FileServer(http.FS(jsnesLibDir)))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
