@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/gorilla/websocket"
 	"github.com/olahol/melody"
 )
 
@@ -31,16 +30,6 @@ func main() {
 		log.Fatalln("no rom file")
 	}
 
-	m := melody.New()
-
-	size := 65536
-	m.Upgrader = &websocket.Upgrader{
-		ReadBufferSize:  size,
-		WriteBufferSize: size,
-	}
-	m.Config.MaxMessageSize = int64(size)
-	m.Config.MessageBufferSize = 2048
-
 	http.Handle("/jsnes/source/", http.FileServer(http.FS(jsnesSourceDir)))
 	http.Handle("/jsnes/lib/", http.FileServer(http.FS(jsnesLibDir)))
 
@@ -56,6 +45,12 @@ func main() {
 	http.HandleFunc("/rom", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, f)
 	})
+
+	m := melody.New()
+	m.Upgrader.ReadBufferSize = 65536
+	m.Upgrader.WriteBufferSize = 65536
+	m.Config.MaxMessageSize = 65536
+	m.Config.MessageBufferSize = 2048
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		m.HandleRequest(w, r)
