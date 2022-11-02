@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -22,11 +23,13 @@ var (
 )
 
 func main() {
+	port := flag.Int("p", 5000, "port to listen on")
+
 	flag.Parse()
 
-	f := flag.Arg(0)
+	rom := flag.Arg(0)
 
-	if f == "" {
+	if rom == "" {
 		log.Fatalln("no rom file")
 	}
 
@@ -43,7 +46,7 @@ func main() {
 	})
 
 	http.HandleFunc("/rom", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, f)
+		http.ServeFile(w, r, rom)
 	})
 
 	m := melody.New()
@@ -97,7 +100,7 @@ func main() {
 		mutex.Unlock()
 	})
 
-	log.Println("listening on http://localhost:5000")
+	log.Printf("listening on http://localhost:%d", *port)
 
-	http.ListenAndServe(":5000", nil)
+	http.ListenAndServe(fmt.Sprint(":", *port), nil)
 }
