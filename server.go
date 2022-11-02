@@ -60,20 +60,20 @@ func main() {
 	pairs := make(map[*melody.Session]*melody.Session)
 
 	m.HandleConnect(func(s *melody.Session) {
+		log.Println("connect")
 		mutex.Lock()
 		var partner *melody.Session
 		for player1, player2 := range pairs {
 			if player2 == nil {
 				partner = player1
 				pairs[partner] = s
+				log.Println("start")
 				partner.Write([]byte("join 1"))
+				s.Write([]byte("join 2"))
 				break
 			}
 		}
 		pairs[s] = partner
-		if partner != nil {
-			s.Write([]byte("join 2"))
-		}
 		mutex.Unlock()
 	})
 
@@ -85,15 +85,19 @@ func main() {
 	})
 
 	m.HandleDisconnect(func(s *melody.Session) {
+		log.Println("disconnect")
 		mutex.Lock()
 		partner := pairs[s]
 		if partner != nil {
 			pairs[partner] = nil
+			log.Println("stop")
 			partner.Write([]byte("part"))
 		}
 		delete(pairs, s)
 		mutex.Unlock()
 	})
+
+	log.Println("listening on http://localhost:5000")
 
 	http.ListenAndServe(":5000", nil)
 }
