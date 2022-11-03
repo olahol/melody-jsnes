@@ -80,13 +80,6 @@ func main() {
 		mutex.Unlock()
 	})
 
-	m.HandleMessageBinary(func(s *melody.Session, msg []byte) {
-		partner := pairs[s]
-		if partner != nil {
-			partner.WriteBinary(msg)
-		}
-	})
-
 	m.HandleDisconnect(func(s *melody.Session) {
 		log.Println("disconnect")
 		mutex.Lock()
@@ -99,6 +92,18 @@ func main() {
 		delete(pairs, s)
 		mutex.Unlock()
 	})
+
+	relay := func(fn func(*melody.Session, []byte) error) func(*melody.Session, []byte) {
+		return func(s *melody.Session, msg []byte) {
+			partner := pairs[s]
+			if partner != nil {
+				fn(partner, msg)
+			}
+		}
+	}
+
+	m.HandleMessage(relay((*melody.Session).Write))
+	m.HandleMessageBinary(relay((*melody.Session).WriteBinary))
 
 	log.Printf("listening on http://localhost:%d", *port)
 
